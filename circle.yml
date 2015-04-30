@@ -1,0 +1,26 @@
+dependencies:
+  pre:
+    - |
+        if [ ! -x ~/nim/bin/nim ]; then
+          git clone -b devel --depth 1 git://github.com/araq/nim ~/nim/
+          git clone -b devel --depth 1 git://github.com/nim-lang/csources ~/nim/csources/
+          cd ~/nim/csources; sh build.sh; cd ..; rm -rf csources
+          bin/nim c koch; ./koch boot -d:release
+          ln -fs ~/nim/bin/nim ~/bin/nim
+        else
+          cd ~/nim; git fetch origin
+          git merge FETCH_HEAD | grep "Already up-to-date" || (bin/nim c koch; ./koch boot -d:release)
+        fi
+
+  cache_directories:
+    - "~/bin/"
+    - "~/nim/"
+
+## Customize test commands
+test:
+  override:
+    - |
+        # Test without nimble
+        git clone --depth 1 https://github.com/nim-lang/sdl2
+        mv sdl2/src/* src
+        nim c -d:release src/nimes
