@@ -43,9 +43,14 @@ var
   nesConsole: NES
 
 try:
-  if paramCount() != 1:
-    quit "Usage: nimes <rom.nes>"
-  nesConsole = newNES(paramStr(1))
+  when defined(android):
+    # TODO: Proper Android support, this just shows a video of a single game
+    nesConsole = newNES("smb3.nes")
+  else:
+    if paramCount() != 1:
+      quit "Usage: nimes <rom.nes>"
+    else:
+      nesConsole = newNES(paramStr(1))
 except:
   quit getCurrentExceptionMsg()
 
@@ -233,3 +238,23 @@ except:
 when not defined emscripten:
   audioDevice.closeAudioDevice()
 sdl2.quit()
+
+when defined(android):
+  {.emit: """
+  #include <SDL_main.h>
+
+  extern int cmdCount;
+  extern char** cmdLine;
+  extern char** gEnv;
+
+  N_CDECL(void, NimMain)(void);
+
+  int main(int argc, char** args) {
+      cmdLine = args;
+      cmdCount = argc;
+      gEnv = NULL;
+      NimMain();
+      return nim_program_result;
+  }
+
+  """.}

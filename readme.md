@@ -1,10 +1,12 @@
 # NimES: NES emulator in Nim [![Build Status](https://circleci.com/gh/def-/nimes.png)](https://circleci.com/gh/def-/nimes)
 
 This is a NES emulator written in the [Nim](http://nim-lang.org/) programming
-language. I made it mainly for fun and demonstration purposes. Most NES games
-should work. You can build the compiler natively (should work on Linux, Mac OS
-X, Windows) or use the [JavaScript](http://hookrace.net/nimes/) version that
-is compiled from the same source code with the help of emscripten.
+language. I made it mainly for fun and demonstration purposes. Nim can be used
+to write elegant and performant code and have it run almost anywhere, including
+Android and JavaScript. You can build the emulator natively (should work on
+Linux, Mac OS X, Windows and other platforms supporting SDL2), build it to
+Android or use the [JavaScript](http://hookrace.net/nimes/) version that is
+compiled from the same source code with the help of emscripten.
 
 ## [Live Demo](http://hookrace.net/nimes/)
 
@@ -42,6 +44,19 @@ Building to JavaScript is a bit more complicated. You need the [Emscripten SDK](
 
     nim -d:release -d:emscripten c src/nimes
 
+## Building for Android
+
+You need the Android SDK (12 or later) and NDK (7 or later) installed. So far NimES on Android only opens a predefined `smb3.nes` and controls don't even work. This is mainly to demonstrate that it could easily be ported to Android.
+
+    nim -d:release -d:android c src/nimes
+    cd android
+    ndk-build
+    ant debug
+
+The resulting apk is in `bin/org.nimes-debug.apk`. You can try this [nimes.apk](http://hookrace.net/nimes/nimes.apk). Some work will be necessary to improve the performance of the program as well as implement Android controls.
+
+Porting to Android was pretty simple by following [this guide](https://wiki.libsdl.org/Android).
+
 ## Controls
 
 | Key   | Action                   |
@@ -67,7 +82,7 @@ Building to JavaScript is a bit more complicated. You need the [Emscripten SDK](
 - Settings for controls/gamepad/joystick
 - Saving
 - Android
-- Performance could be improved by making PPU render by scanline, not by pixel
+- Performance could be improved significantly by making PPU render by scanline, not by pixel
 - More mappers (0,1,2,3,4,7 working, [NES mapper list](http://tuxnes.sourceforge.net/nesmapper.txt))
 - PAL video (NTSC only currently)
 

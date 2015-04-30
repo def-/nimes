@@ -4,3 +4,9 @@
 nimcache/
 *.swp
 *.nes
+
+android/bin
+android/gen
+android/libs
+android/obj
+android/jni/src/*.c
