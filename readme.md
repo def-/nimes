@@ -44,6 +44,8 @@ Building to JavaScript is a bit more complicated. You need the [Emscripten SDK](
 
     nim -d:release -d:emscripten c src/nimes
 
+You need the files `tetris.nes, pacman.nes, smb.nes, smb3.nes` available for this.
+
 ## Building for Android
 
 You need the Android SDK (12 or later) and NDK (7 or later) installed. So far NimES on Android only opens a predefined `smb3.nes` and controls don't even work. This is mainly to demonstrate that it could easily be ported to Android.
