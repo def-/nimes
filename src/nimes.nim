@@ -25,6 +25,8 @@ else:
       copyMem(stream, addr nes.apu.chan[0], len)
       moveMem(addr nes.apu.chan[0], addr nes.apu.chan[elems], rest * sizeof(float32))
       nes.apu.chanPos = rest
+    else: # Audio has to be zeroed since SDL2
+      zeroMem(stream, len)
 
 const keys = [
   [SDL_SCANCODE_Z, SDL_SCANCODE_X, SDL_SCANCODE_SPACE,
