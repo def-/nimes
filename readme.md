@@ -17,7 +17,7 @@ compiled from the same source code with the help of emscripten.
 You need [Nim 0.11](http://nim-lang.org/download.html) or [devel](https://github.com/Araq/Nim) and the SDL2 development libraries ([Windows, Mac OS X download](https://www.libsdl.org/download-2.0.php)) installed on your system:
 
     apt-get install libsdl2-dev # Ubuntu/Debian (wheezy-backports for Debian 7)
-    homebrew install sdl2       # Mac OS X with homebrew
+    brew install sdl2           # Mac OS X with homebrew
     yum install SDL2-devel      # Fedora/CentOS
     pacman -S sdl2              # Arch Linux
     emerge libsdl2              # Gentoo
