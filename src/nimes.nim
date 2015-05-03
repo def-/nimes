@@ -56,7 +56,6 @@ try:
 except:
   quit getCurrentExceptionMsg()
 
-
 when defined(emscripten):
   const
     inits = INIT_VIDEO # or INIT_AUDIO

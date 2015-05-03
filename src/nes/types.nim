@@ -83,7 +83,7 @@ type
 
   APU* = ref object
     nes*: NES
-    chan*: array[32768, float32]
+    chan*: array[4096, float32]
     chanPos*: int
 
     pulse*: array[2, Pulse]
