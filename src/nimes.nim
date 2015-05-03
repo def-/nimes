@@ -87,6 +87,7 @@ let
 
 # auto-scaling and letterboxing
 discard renderer.setLogicalSize(resolution.x, resolution.y)
+discard showCursor(false)
 
 #when defined(emscripten):
 #  var
