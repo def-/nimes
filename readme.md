@@ -38,6 +38,15 @@ There are a few possibilities to build NimES if you got the source already:
 If you don't want to use nimble, you'll have to get Nim's [SDL2
 wrapper](https://github.com/nim-lang/sdl2) manually.
 
+You can also use [nake](https://github.com/fowlmouth/nake) for building:
+
+    $ nake
+    Available tasks:
+    desktop - Builds NimES for Desktop
+    web - Builds NimES for the Web
+    android - Builds NimES for Android
+    clean - Removes build files
+
 ## Building with Emscripten
 
 Building to JavaScript is a bit more complicated. You need the [Emscripten SDK](https://kripken.github.io/emscripten-site/docs/getting_started/downloads.html) installed.
