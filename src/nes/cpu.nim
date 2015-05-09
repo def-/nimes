@@ -14,28 +14,28 @@ type
 
 template mem: expr{.immediate, dirty.} = cpu.mem
 
-proc push(cpu: CPU, val: uint8) =
+proc push(cpu: var CPU, val: uint8) =
   mem[cpu.sp.uint16 or 0x100] = val
   dec cpu.sp
 
-proc pull(cpu: CPU): uint8 =
+proc pull(cpu: var CPU): uint8 =
   inc cpu.sp
   result = mem[cpu.sp.uint16 or 0x100]
 
-proc push16(cpu: CPU, val: uint16) =
+proc push16(cpu: var CPU, val: uint16) =
   cpu.push uint8(val shr 8)
   cpu.push uint8(val)
 
-proc pull16(cpu: CPU): uint16 =
+proc pull16(cpu: var CPU): uint16 =
   uint16(cpu.pull()) or (uint16(cpu.pull()) shl 8)
 
-proc setZ(cpu: CPU, val: uint8) =
+proc setZ(cpu: var CPU, val: uint8) =
   cpu.z = val == 0
 
-proc setN(cpu: CPU, val: uint8) =
+proc setN(cpu: var CPU, val: uint8) =
   cpu.n = (val and 0x80) != 0
 
-proc setZN(cpu: CPU, val: uint8) =
+proc setZN(cpu: var CPU, val: uint8) =
   cpu.setZ(val)
   cpu.setN(val)
 
@@ -49,7 +49,7 @@ proc flags(cpu: CPU): uint8 =
     (cpu.v.uint8 shl 6) or
     (cpu.n.uint8 shl 7)
 
-proc `flags=`(cpu: CPU, flags: uint8) =
+proc `flags=`(cpu: var CPU, flags: uint8) =
   cpu.c = flags.bit(0)
   cpu.z = flags.bit(1)
   cpu.i = flags.bit(2)
@@ -59,35 +59,34 @@ proc `flags=`(cpu: CPU, flags: uint8) =
   cpu.v = flags.bit(6)
   cpu.n = flags.bit(7)
 
-proc reset*(cpu: CPU) =
+proc reset*(cpu: var CPU) =
   cpu.pc = mem.read16(0xFFFC)
   cpu.sp = 0xFD
   cpu.flags = 0x24
 
-proc newCPU*(nes: NES): CPU =
-  new result
+proc initCPU*(nes: NES): CPU =
   result.mem = newCPUMemory(nes)
   result.reset()
 
 proc pagesDiffer(a, b: uint16): bool =
   (a and 0xFF00) != (b and 0xFF00)
 
-proc branch(cpu: CPU, info: StepInfo) =
+proc branch(cpu: var CPU, info: StepInfo) =
   cpu.pc = info.address
   inc cpu.cycles
   if pagesDiffer(info.pc, info.address):
     inc cpu.cycles
 
-proc compare(cpu: CPU, a, b: uint8) =
+proc compare(cpu: var CPU, a, b: uint8) =
   cpu.setZN(a - b)
   cpu.c = a >= b
 
 template op(name, code: expr): stmt {.dirty.} =
-  proc name(cpu: CPU, info = StepInfo()) =
+  proc name(cpu: var CPU, info = StepInfo()) =
     code
 
 template op(name, zn, code: expr): stmt {.dirty.} =
-  proc name(cpu: CPU, info = StepInfo()) =
+  proc name(cpu: var CPU, info = StepInfo()) =
     code
     cpu.setZN(zn)
 
@@ -444,21 +443,21 @@ const
      1,   1,   0,   0,   0,   0,   0,   0,   0,   1,   0,   0,   1,   1,   0,   0,
   ]
 
-proc nmi(cpu: CPU) = # Non-maskable interrupt
+proc nmi(cpu: var CPU) = # Non-maskable interrupt
   cpu.push16(cpu.pc)
   cpu.php()
   cpu.pc = mem.read16(0xFFFA)
   cpu.i = true
   cpu.cycles += 7
 
-proc irq(cpu: CPU) = # IRQ interrupt
+proc irq(cpu: var CPU) = # IRQ interrupt
   cpu.push16(cpu.pc)
   cpu.php()
   cpu.pc = mem.read16(0xFFFE)
   cpu.i = true
   cpu.cycles += 7
 
-proc step*(cpu: CPU): int =
+proc step*(cpu: var CPU): int =
   if cpu.stall > 0:
     dec cpu.stall
     return 1

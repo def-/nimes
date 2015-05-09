@@ -1,7 +1,8 @@
 import unsigned
 
 type
-  NES* = ref object
+  NES* = ref NESObj
+  NESObj* = object
     cpu*: CPU
     apu*: APU
     ppu*: PPU
@@ -10,7 +11,7 @@ type
     mapper*: Mapper
     ram*: array[2048'u16, uint8]
 
-  CPU* = ref object
+  CPU* = object
     mem*: CPUMemory
     cycles*: uint64
     pc*: uint16
@@ -24,7 +25,7 @@ type
   CPUMemory* = ref object
     nes*: NES
 
-  PPU* = ref object
+  PPU* = object
     mem*: PPUMemory
     nes*: NES
 
@@ -36,7 +37,8 @@ type
     paletteData*: array[32, uint8]
     nameTableData*: array[2048, uint8]
     oamData*: array[256, uint8]
-    front*, back*: Picture
+    front*: Picture
+    back*: ref Picture
 
     # Registers
     v*, t*: uint16
@@ -76,12 +78,12 @@ type
 
   Color* = tuple[r, g, b, a: uint8]
 
-  Picture* = ref array[240, array[256, Color]]
+  Picture* = array[240, array[256, Color]]
 
   PPUMemory* = ref object
     nes*: NES
 
-  APU* = ref object
+  APU* = object
     nes*: NES
     chan*: array[4096, float32]
     chanPos*: int
@@ -94,7 +96,7 @@ type
     framePeriod*, frameValue*: uint8
     frameIRQ*: bool
 
-  Pulse* = ref object
+  Pulse* = object
     enabled*: bool
     channel*: uint8
 
@@ -113,7 +115,7 @@ type
 
     constantVolume*: uint8
 
-  Noise* = ref object
+  Noise* = object
     enabled*, mode*: bool
 
     shiftRegister*: uint16
@@ -128,7 +130,7 @@ type
 
     constantVolume*: uint8
 
-  Triangle* = ref object
+  Triangle* = object
     enabled*: bool
 
     lengthEnabled*: bool
@@ -141,7 +143,7 @@ type
     counterPeriod*, counterValue*: uint8
     counterReload*: bool
 
-  DMC* = ref object
+  DMC* = object
     cpu*: CPU
     enabled*: bool
     value*: uint8
@@ -159,7 +161,7 @@ type
     mapper*, mirror*: uint8
     battery*: bool
 
-  Controller* = ref object
+  Controller* = object
     buttons*: Buttons
     index*, strobe*: uint8
 
@@ -177,10 +179,10 @@ const frequency* = 1789773
 proc bit*(val: uint8, bit: range[0..7]): bool =
   ((val shr bit) and 1) != 0
 
-proc triggerNMI*(cpu: CPU) =
+proc triggerNMI*(cpu: var CPU) =
   cpu.interrupt = iNMI
 
-proc triggerIRQ*(cpu: CPU) =
+proc triggerIRQ*(cpu: var CPU) =
   if not cpu.i:
     cpu.interrupt = iIRQ
 

@@ -1,4 +1,14 @@
-import nes, os, times, sdl2, sdl2.audio, sdl2.joystick
+import nes, os, times, algorithm, sdl2, sdl2.audio, sdl2.joystick
+
+const saveSize = 600
+
+var
+  reverse = false
+  reverseReset = false
+  reverseStart = 0
+  states: array[saveSize, NESObj]
+  statesPos = 0
+  pastStartsAt = 0
 
 when defined(emscripten):
   proc emscripten_set_main_loop(fun: proc() {.cdecl.}, fps,
@@ -22,6 +32,8 @@ else:
     let elems = len div sizeof(float32)
     if nes.apu.chanPos >= elems:
       let rest = nes.apu.chanPos - elems
+      if reverse:
+        reverse(nes.apu.chan, 0, elems-1)
       copyMem(stream, addr nes.apu.chan[0], len)
       moveMem(addr nes.apu.chan[0], addr nes.apu.chan[elems], rest * sizeof(float32))
       nes.apu.chanPos = rest
@@ -132,15 +144,29 @@ proc loop {.cdecl.} =
 
     let newTime = epochTime()
 
-    # Skip unreaonable time differences. Workaround for emscripten
-    if newTime - time < 1:
-      nesConsole.run((newTime - time) * speed)
+    if reverse:
+      copyMem(addr nesConsole[], addr states[statesPos], sizeof(nesConsole[]))
+      statesPos = (statesPos + saveSize - 1) mod saveSize
+      if statesPos == pastStartsAt:
+        reverse = false
+        reverseReset = true
+        paused = true
+    else:
+      # Skip unreaonable time differences. Workaround for emscripten
+      if newTime - time < 1:
+        nesConsole.run((newTime - time) * speed)
+
     time = newTime
 
     if muted:
       nesConsole.apu.chanPos = 0
 
-    texture.updateTexture(nil, addr nesConsole.buffer[], pitch)
+    texture.updateTexture(nil, addr nesConsole.buffer, pitch)
+
+    if not reverse:
+      copyMem(addr states[statesPos], addr nesConsole[], sizeof(nesConsole[]))
+      statesPos = (statesPos + 1) mod saveSize
+      pastStartsAt = statesPos
 
     #when defined(emscripten):
     #  audioDevice.queueAudio(addr nesConsole.apu.chan[0], uint32(nesConsole.apu.chanPos * sizeof(float32)))
@@ -175,6 +201,10 @@ proc loop {.cdecl.} =
         when not defined(emscripten):
           audioDevice.pauseAudioDevice(muted.cint)
       of SDL_SCANCODE_R:   nesConsole.reset()
+      of SDL_SCANCODE_T:
+        if not reverseReset and not reverse:
+          reverse = true
+          reverseStart = statesPos
       of SDL_SCANCODE_F:   speed = 2.5
       of SDL_SCANCODE_F9:  speed = 1.0
       of SDL_SCANCODE_F10: speed = max(speed - 0.05, 0.05)
@@ -186,6 +216,10 @@ proc loop {.cdecl.} =
 
       case e.keysym.scancode
       of SDL_SCANCODE_F:   speed = 1.0
+      of SDL_SCANCODE_T:
+        reverse = false
+        reverseReset = false
+        paused = false
       of SDL_SCANCODE_Y:   buttons[0][0] = false
       else:                setButton e, false
     of JoyDeviceAdded:

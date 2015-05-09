@@ -1,7 +1,7 @@
 import nes.types, nes.cpu, nes.apu, nes.ppu, nes.cartridge, nes.controller,
   nes.mapper, nes.mem, unsigned
 
-export types.NES, types.Buttons, setButtons, resolution
+export types.NES, types.NESObj, types.Buttons, setButtons, resolution
 
 proc newNES*(path: string): NES =
   new result
@@ -10,12 +10,10 @@ proc newNES*(path: string): NES =
   except ValueError:
     raise newException(ValueError,
       "failed to open " & path & ": " & getCurrentExceptionMsg())
-  result.controllers[0] = newController()
-  result.controllers[1] = newController()
   result.mapper = newMapper(result)
-  result.cpu = newCPU(result)
-  result.apu = newAPU(result)
-  result.ppu = newPPU(result)
+  result.cpu = initCPU(result)
+  result.apu = initAPU(result)
+  result.ppu = initPPU(result)
 
 proc reset*(nes: NES) =
   nes.cpu.reset()
@@ -37,5 +35,5 @@ proc run*(nes: NES, seconds: float) =
   while cycles > 0:
     cycles -= nes.step()
 
-proc buffer*(nes: NES): Picture =
+proc buffer*(nes: NES): var Picture =
   nes.ppu.front

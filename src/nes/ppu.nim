@@ -21,7 +21,7 @@ proc initPalette: array[0x40'u8, Color] =
 
 const palette* = initPalette()
 
-proc reset*(ppu: PPU) =
+proc reset*(ppu: var PPU) =
   ppu.cycle = 340
   ppu.scanLine = 240
   ppu.frame = 0
@@ -29,21 +29,19 @@ proc reset*(ppu: PPU) =
   ppu.mask = 0
   ppu.oamAddress = 0
 
-proc newPPU*(nes: NES): PPU =
-  new result
-  new result.front
+proc initPPU*(nes: NES): PPU =
   new result.back
   result.mem = newPPUMemory(nes)
   result.nes = nes
   result.reset()
 
-proc incrementX(ppu: PPU) =
+proc incrementX(ppu: var PPU) =
   if (ppu.v and 0x001F) == 31:
     ppu.v = (ppu.v and 0xFFE0) xor 0x0400
   else:
     inc ppu.v
 
-proc incrementY(ppu: PPU) =
+proc incrementY(ppu: var PPU) =
   if (ppu.v and 0x7000) != 0x7000:
     ppu.v += 0x1000
   else:
@@ -58,26 +56,30 @@ proc incrementY(ppu: PPU) =
       inc y
     ppu.v = (ppu.v and 0xFC1F) or (y shl 5)
 
-proc copyX(ppu: PPU) =
+proc copyX(ppu: var PPU) =
   ppu.v = (ppu.v and 0xFBE0) or (ppu.t and 0x041F)
 
-proc copyY(ppu: PPU) =
+proc copyY(ppu: var PPU) =
   ppu.v = (ppu.v and 0x841F) or (ppu.t and 0x7BE0)
 
-proc setVerticalBlank(ppu: PPU) =
-  swap ppu.front, ppu.back
+proc setVerticalBlank(ppu: var PPU) =
+  #swap ppu.front, ppu.back[]
+  var tmp: Picture
+  copyMem(addr tmp, addr ppu.back[], sizeof(tmp))
+  copyMem(addr ppu.back[], addr ppu.front, sizeof(tmp))
+  copyMem(addr ppu.front, addr tmp, sizeof(tmp))
   ppu.nmiOccured = true
   ppu.nmiChange()
 
-proc clearVerticalBlank(ppu: PPU) =
+proc clearVerticalBlank(ppu: var PPU) =
   ppu.nmiOccured = false
   ppu.nmiChange()
 
-proc fetchNameTableByte(ppu: PPU) =
+proc fetchNameTableByte(ppu: var PPU) =
   let adr = 0x2000'u16 or (ppu.v and 0x0FFF)
   ppu.nameTable = ppu.mem[adr]
 
-proc fetchAttributeTableByte(ppu: PPU) =
+proc fetchAttributeTableByte(ppu: var PPU) =
   let
     adr = 0x23C0'u16 or ppu.v and 0x0C00 or (ppu.v shr 4) and 0x38 or
       (ppu.v shr 2) and 0x07
@@ -88,13 +90,13 @@ template tileAdr: expr {.dirty.} =
   ppu.flagBackgroundTable.uint16*0x1000 + ppu.nameTable.uint16*16 +
     ((ppu.v shr 12) and 7)
 
-proc fetchLowTileByte(ppu: PPU) =
+proc fetchLowTileByte(ppu: var PPU) =
   ppu.lowTile = ppu.mem[tileAdr]
 
-proc fetchHighTileByte(ppu: PPU) =
+proc fetchHighTileByte(ppu: var PPU) =
   ppu.highTile = ppu.mem[tileAdr+8]
 
-proc storeTileData(ppu: PPU) =
+proc storeTileData(ppu: var PPU) =
   var data: uint32
   for i in 0..7:
     let a = ppu.attributeTable
@@ -108,14 +110,14 @@ proc storeTileData(ppu: PPU) =
 proc fetchTileData(ppu: PPU): uint32 =
   uint32(ppu.tileData shr 32)
 
-proc backgroundPixel(ppu: PPU): uint8 =
+proc backgroundPixel(ppu: var PPU): uint8 =
   if not ppu.flagShowBackground:
     return
 
   let data = ppu.fetchTileData() shr ((7'u32-ppu.x)*4)
   result = uint8(data and 0x0F)
 
-proc spritePixel(ppu: PPU): (uint8, uint8) =
+proc spritePixel(ppu: var PPU): (uint8, uint8) =
   if not ppu.flagShowSprites:
     return
 
@@ -131,7 +133,7 @@ proc spritePixel(ppu: PPU): (uint8, uint8) =
 
     return (i.uint8, color)
 
-proc renderPixel(ppu: PPU) =
+proc renderPixel(ppu: var PPU) =
   let x = ppu.cycle - 1
   let y = ppu.scanLine
   var background = ppu.backgroundPixel()
@@ -162,7 +164,7 @@ proc renderPixel(ppu: PPU) =
   let c = palette[ppu.readPalette(color.uint16) mod 64]
   ppu.back[y][x] = c
 
-proc fetchSpritePattern(ppu: PPU, i, row: int): uint32 =
+proc fetchSpritePattern(ppu: var PPU, i, row: int): uint32 =
   var row = row
   var tile = ppu.oamData[i*4+1]
   let attributes = ppu.oamData[i*4+2]
@@ -204,7 +206,7 @@ proc fetchSpritePattern(ppu: PPU, i, row: int): uint32 =
 
     result = (result shl 4'u32) or uint32(a or p1 or p2)
 
-proc evaluateSprites(ppu: PPU) =
+proc evaluateSprites(ppu: var PPU) =
   var h = if ppu.flagSpriteSize: 16 else: 8
   var count = 0
   for i in 0..63:
@@ -230,7 +232,7 @@ proc evaluateSprites(ppu: PPU) =
 
   ppu.spriteCount = count
 
-proc tick(ppu: PPU) =
+proc tick(ppu: var PPU) =
   if ppu.nmiDelay > 0'u8:
     dec ppu.nmiDelay
     if ppu.nmiDelay == 0 and ppu.nmiOutput and ppu.nmiOccured:
@@ -253,7 +255,7 @@ proc tick(ppu: PPU) =
       inc ppu.frame
       ppu.f = ppu.f xor 1
 
-proc step*(ppu: PPU) =
+proc step*(ppu: var PPU) =
   ppu.tick()
 
   let

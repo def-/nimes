@@ -37,14 +37,7 @@ const
      0,     1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,
   ]
 
-proc newAPU*(nes: NES): APU =
-  new result
-  new result.pulse[0]
-  new result.pulse[1]
-  new result.triangle
-  new result.noise
-  new result.dmc
-
+proc initAPU*(nes: NES): APU =
   result.nes = nes
   result.noise.shiftRegister = 1
   result.pulse[0].channel = 1
@@ -60,7 +53,7 @@ proc output(p: Pulse): uint8 =
   if p.envelopeEnabled: return p.envelopeVolume
   else: return p.constantVolume
 
-proc sweep(p: Pulse) =
+proc sweep(p: var Pulse) =
   let delta = p.timerPeriod shr p.sweepShift
   if p.sweepNegate:
     p.timerPeriod -= delta
@@ -69,14 +62,14 @@ proc sweep(p: Pulse) =
   else:
     p.timerPeriod += delta
 
-proc stepTimer(p: Pulse) =
+proc stepTimer(p: var Pulse) =
   if p.timerValue == 0:
     p.timerValue = p.timerPeriod
     p.dutyValue = (p.dutyValue + 1) mod 8
   else:
     dec p.timerValue
 
-proc stepEnvelope(p: Pulse) =
+proc stepEnvelope(p: var Pulse) =
   if p.envelopeStart:
     p.envelopeVolume = 15
     p.envelopeValue = p.envelopePeriod
@@ -90,7 +83,7 @@ proc stepEnvelope(p: Pulse) =
       p.envelopeVolume = 15
     p.envelopeValue = p.envelopePeriod
 
-proc stepSweep(p: Pulse) =
+proc stepSweep(p: var Pulse) =
   if p.sweepReload:
     if p.sweepEnabled and p.sweepValue == 0:
       p.sweep()
@@ -104,11 +97,11 @@ proc stepSweep(p: Pulse) =
       p.sweep()
     p.sweepValue = p.sweepPeriod
 
-proc stepLength(p: Pulse) =
+proc stepLength(p: var Pulse) =
   if p.lengthEnabled and p.lengthValue > 0'u8:
     dec p.lengthValue
 
-proc stepTimer(t: Triangle) =
+proc stepTimer(t: var Triangle) =
   if t.timerValue == 0:
     t.timerValue = t.timerPeriod
     if t.lengthValue > 0'u8 and t.counterValue > 0'u8:
@@ -116,11 +109,11 @@ proc stepTimer(t: Triangle) =
   else:
     dec t.timerValue
 
-proc stepLength(t: Triangle) =
+proc stepLength(t: var Triangle) =
   if t.lengthEnabled and t.lengthValue > 0'u8:
     dec t.lengthValue
 
-proc stepCounter(t: Triangle) =
+proc stepCounter(t: var Triangle) =
   if t.counterReload:
     t.counterValue = t.counterPeriod
   elif t.counterValue > 0'u8:
@@ -134,7 +127,7 @@ proc output(t: Triangle): uint8 =
   if t.counterValue == 0: return
   return triangleTable[t.dutyValue]
 
-proc stepTimer(n: Noise) =
+proc stepTimer(n: var Noise) =
   if n.timerValue == 0:
     n.timerValue = n.timerPeriod
     let
@@ -145,7 +138,7 @@ proc stepTimer(n: Noise) =
   else:
     dec n.timerValue
 
-proc stepEnvelope(n: Noise) =
+proc stepEnvelope(n: var Noise) =
   if n.envelopeStart:
     n.envelopeVolume = 15
     n.envelopeValue = n.envelopePeriod
@@ -159,7 +152,7 @@ proc stepEnvelope(n: Noise) =
       n.envelopeVolume = 15
     n.envelopeValue = n.envelopePeriod
 
-proc stepLength(n: Noise) =
+proc stepLength(n: var Noise) =
   if n.lengthEnabled and n.lengthValue > 0'u8:
     dec n.lengthValue
 
@@ -171,7 +164,7 @@ proc output(n: Noise): uint8 =
   if n.envelopeEnabled: return n.envelopeVolume
   else: return n.constantVolume
 
-proc stepReader(d: DMC) =
+proc stepReader(d: var DMC) =
   if d.currentLength > 0'u16 and d.bitCount == 0:
     d.cpu.stall += 4
     d.shiftRegister = d.cpu.mem[d.currentAddress]
@@ -183,7 +176,7 @@ proc stepReader(d: DMC) =
     if d.currentLength == 0 and d.loop:
       d.restart()
 
-proc stepShifter(d: DMC) =
+proc stepShifter(d: var DMC) =
   if d.bitCount == 0:
     return
 
@@ -196,7 +189,7 @@ proc stepShifter(d: DMC) =
   d.shiftRegister = d.shiftRegister shr 1
   dec d.bitCount
 
-proc stepTimer(d: DMC) =
+proc stepTimer(d: var DMC) =
   if not d.enabled:
     return
 
@@ -207,7 +200,7 @@ proc stepTimer(d: DMC) =
   else:
     dec d.tickValue
 
-proc stepTimer(apu: APU) =
+proc stepTimer(apu: var APU) =
   if apu.cycle mod 2 == 0:
     apu.pulse[0].stepTimer()
     apu.pulse[1].stepTimer()
@@ -216,27 +209,27 @@ proc stepTimer(apu: APU) =
 
   apu.triangle.stepTimer()
 
-proc stepEnvelope(apu: APU) =
+proc stepEnvelope(apu: var APU) =
   apu.pulse[0].stepEnvelope()
   apu.pulse[1].stepEnvelope()
   apu.triangle.stepCounter()
   apu.noise.stepEnvelope()
 
-proc stepSweep(apu: APU) =
+proc stepSweep(apu: var APU) =
   apu.pulse[0].stepSweep()
   apu.pulse[1].stepSweep()
 
-proc stepLength(apu: APU) =
+proc stepLength(apu: var APU) =
   apu.pulse[0].stepLength()
   apu.pulse[1].stepLength()
   apu.triangle.stepLength()
   apu.noise.stepLength()
 
-proc fireIRQ(apu: APU) =
+proc fireIRQ(apu: var APU) =
   if apu.frameIRQ:
     apu.nes.cpu.triggerIRQ()
 
-proc stepFrameCounter(apu: APU) =
+proc stepFrameCounter(apu: var APU) =
   case apu.framePeriod
   of 4:
     apu.frameValue = (apu.frameValue + 1) mod 4
@@ -275,7 +268,7 @@ proc output(apu: APU): float32 =
 
   result = pulseTable[p0+p1] + tndTable[t*3+n*2+d]
 
-proc step*(apu: APU) =
+proc step*(apu: var APU) =
   let c1 = apu.cycle.float64
   inc apu.cycle
   let c2 = apu.cycle.float64
