@@ -117,6 +117,8 @@ template setButton(e, val) =
     if button > -1:
       buttons[player][button] = val
 
+var x: NESSerial
+
 proc loop {.cdecl.} =
   when defined(emscripten):
     if not runGame:
@@ -141,6 +143,8 @@ proc loop {.cdecl.} =
       nesConsole.apu.chanPos = 0
 
     texture.updateTexture(nil, addr nesConsole.buffer[], pitch)
+
+    #x.serialize(nesConsole)
 
     #when defined(emscripten):
     #  audioDevice.queueAudio(addr nesConsole.apu.chan[0], uint32(nesConsole.apu.chanPos * sizeof(float32)))
