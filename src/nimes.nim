@@ -1,14 +1,14 @@
-import nes, os, times, algorithm, sdl2, sdl2.audio, sdl2.joystick
+import
+  rewinder, nes,
+  os, times, algorithm,
+  sdl2, sdl2.audio, sdl2.joystick
 
 const saveSize = 600
 
 var
   reverse = false
   reverseReset = false
-  reverseStart = 0
-  states: array[saveSize, NESObj]
-  statesPos = 0
-  pastStartsAt = 0
+  rewind = newRewinder()
 
 when defined(emscripten):
   proc emscripten_set_main_loop(fun: proc() {.cdecl.}, fps,
@@ -145,9 +145,9 @@ proc loop {.cdecl.} =
     let newTime = epochTime()
 
     if reverse:
-      copyMem(addr nesConsole[], addr states[statesPos], sizeof(nesConsole[]))
-      statesPos = (statesPos + saveSize - 1) mod saveSize
-      if statesPos == pastStartsAt:
+      if not rewind.empty:
+        nesConsole[] = rewind.pop()
+      else:
         reverse = false
         reverseReset = true
         paused = true
@@ -164,9 +164,7 @@ proc loop {.cdecl.} =
     texture.updateTexture(nil, addr nesConsole.buffer, pitch)
 
     if not reverse:
-      copyMem(addr states[statesPos], addr nesConsole[], sizeof(nesConsole[]))
-      statesPos = (statesPos + 1) mod saveSize
-      pastStartsAt = statesPos
+      rewind.push(nesConsole[])
 
     #when defined(emscripten):
     #  audioDevice.queueAudio(addr nesConsole.apu.chan[0], uint32(nesConsole.apu.chanPos * sizeof(float32)))
@@ -204,7 +202,6 @@ proc loop {.cdecl.} =
       of SDL_SCANCODE_T:
         if not reverseReset and not reverse:
           reverse = true
-          reverseStart = statesPos
       of SDL_SCANCODE_F:   speed = 2.5
       of SDL_SCANCODE_F9:  speed = 1.0
       of SDL_SCANCODE_F10: speed = max(speed - 0.05, 0.05)
