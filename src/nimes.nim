@@ -5,11 +5,6 @@ import
 
 const saveSize = 600
 
-var
-  reverse = false
-  reverseReset = false
-  rewind = newRewinder()
-
 when defined(emscripten):
   proc emscripten_set_main_loop(fun: proc() {.cdecl.}, fps,
     simulate_infinite_loop: cint) {.header: "<emscripten.h>".}
@@ -23,6 +18,11 @@ when defined(emscripten):
   #proc getQueuedAudioSize(dev: AudioDeviceID): uint32 {.
   #  header: "<SDL2/SDL.h>", importc: "SDL_GetQueuedAudioSize".}
 else:
+  var
+    reverse = false
+    reverseReset = false
+    rewind = newRewinder()
+
   const samples = 2048
 
   proc callback(userdata: pointer, stream: ptr uint8, len: cint) {.cdecl.} =
@@ -144,13 +144,17 @@ proc loop {.cdecl.} =
 
     let newTime = epochTime()
 
-    if reverse:
-      if not rewind.empty:
-        nesConsole[] = rewind.pop()
+    when not defined(emscripten):
+      if reverse:
+        if not rewind.empty:
+          nesConsole[] = rewind.pop()
+        else:
+          reverse = false
+          reverseReset = true
+          paused = true
       else:
-        reverse = false
-        reverseReset = true
-        paused = true
+        if newTime - time < 1:
+          nesConsole.run((newTime - time) * speed)
     else:
       # Skip unreaonable time differences. Workaround for emscripten
       if newTime - time < 1:
@@ -163,8 +167,9 @@ proc loop {.cdecl.} =
 
     texture.updateTexture(nil, addr nesConsole.buffer, pitch)
 
-    if not reverse:
-      rewind.push(nesConsole[])
+    when not defined(emscripten):
+      if not reverse:
+        rewind.push(nesConsole[])
 
     #when defined(emscripten):
     #  audioDevice.queueAudio(addr nesConsole.apu.chan[0], uint32(nesConsole.apu.chanPos * sizeof(float32)))
@@ -200,8 +205,9 @@ proc loop {.cdecl.} =
           audioDevice.pauseAudioDevice(muted.cint)
       of SDL_SCANCODE_R:   nesConsole.reset()
       of SDL_SCANCODE_T:
-        if not reverseReset and not reverse:
-          reverse = true
+        when not defined(emscripten):
+          if not reverseReset and not reverse:
+            reverse = true
       of SDL_SCANCODE_F:   speed = 2.5
       of SDL_SCANCODE_F9:  speed = 1.0
       of SDL_SCANCODE_F10: speed = max(speed - 0.05, 0.05)
@@ -214,9 +220,10 @@ proc loop {.cdecl.} =
       case e.keysym.scancode
       of SDL_SCANCODE_F:   speed = 1.0
       of SDL_SCANCODE_T:
-        reverse = false
-        reverseReset = false
-        paused = false
+        when not defined(emscripten):
+          reverse = false
+          reverseReset = false
+          paused = false
       of SDL_SCANCODE_Y:   buttons[0][0] = false
       else:                setButton e, false
     of JoyDeviceAdded:
