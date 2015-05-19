@@ -1,5 +1,7 @@
 import nes
 
+# TODO: State of Cartridge and Mapper is missing, a bit ugly to add
+
 const rewindSize = 600
 
 type Rewinder* = ref object
