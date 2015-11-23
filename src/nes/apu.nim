@@ -1,4 +1,4 @@
-import types, mem, unsigned
+import types, mem
 
 export types.APU
 

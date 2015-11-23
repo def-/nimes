@@ -9,4 +9,4 @@ srcDir        = "src"
 bin           = "nimes"
 
 [Deps]
-Requires      = "nim >= 0.10.3, sdl2 >= 1.0"
+Requires      = "nim >= 0.12.0, sdl2 >= 1.0"

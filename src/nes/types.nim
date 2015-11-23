@@ -1,5 +1,3 @@
-import unsigned
-
 type
   NES* = ref NESObj
   NESObj* = object
@@ -186,6 +184,6 @@ proc triggerIRQ*(cpu: var CPU) =
   if not cpu.i:
     cpu.interrupt = iIRQ
 
-method step*(m: Mapper) = discard
-method `[]`*(m: Mapper, adr: uint16): uint8 = discard
-method `[]=`*(m: Mapper, adr: uint16, val: uint8) = discard
+method step*(m: Mapper) {.base.} = discard
+method `[]`*(m: Mapper, adr: uint16): uint8 {.base.} = discard
+method `[]=`*(m: Mapper, adr: uint16, val: uint8) {.base.} = discard

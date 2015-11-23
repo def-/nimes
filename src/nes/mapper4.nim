@@ -1,4 +1,4 @@
-import unsigned, types
+import types
 
 type Mapper4* = ref object of Mapper
   cartridge: Cartridge

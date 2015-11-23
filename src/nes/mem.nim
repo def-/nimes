@@ -1,4 +1,4 @@
-import unsigned, types, controller, mapper, mapper2
+import types, controller, mapper, mapper2
 
 export types.CPUMemory, types.PPUMemory
 

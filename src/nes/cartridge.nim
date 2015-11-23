@@ -1,4 +1,4 @@
-import types, unsigned
+import types
 
 export types.Cartridge
 
