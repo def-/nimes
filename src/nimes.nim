@@ -75,7 +75,7 @@ when defined(emscripten):
     title = nil # Keep website title
 else:
   const
-    inits = INIT_EVERYTHING
+    inits = INIT_VIDEO or INIT_AUDIO or INIT_TIMER or INIT_JOYSTICK or INIT_GAMECONTROLLER or INIT_EVENTS
     windowProps = SDL_WINDOW_SHOWN or SDL_WINDOW_OPENGL or SDL_WINDOW_RESIZABLE
     title = "NimES"
 
