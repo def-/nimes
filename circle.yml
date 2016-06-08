@@ -1,7 +1,3 @@
-machine:
-  environment:
-    PATH: ~/nim/bin:~/.nimble/bin:$PATH
-
 dependencies:
   pre:
     - |
@@ -10,6 +6,7 @@ dependencies:
           git clone -b devel --depth 1 git://github.com/nim-lang/csources ~/nim/csources/
           cd ~/nim/csources; sh build.sh; cd ..; rm -rf csources
           bin/nim c koch; ./koch boot -d:release
+          ln -fs ~/nim/bin/nim ~/bin/nim
         else
           cd ~/nim; git fetch origin
           git merge FETCH_HEAD | grep "Already up-to-date" || (bin/nim c koch; ./koch boot -d:release)
@@ -18,6 +15,7 @@ dependencies:
           git clone --depth 1 https://github.com/nim-lang/nimble ~/nimble/
           cd ~/nimble
           nim -d:release c -r src/nimble -y install
+          ln -fs ~/.nimble/bin/nimble ~/bin/nimble
         else
           cd ~/nimble; git fetch origin
           git merge FETCH_HEAD | grep "Already up-to-date" || (nim -d:release c -r src/nimble -y install)
