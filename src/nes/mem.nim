@@ -119,7 +119,7 @@ proc `control=`(n: var Noise, val: uint8) =
 
 proc `period=`(n: var Noise, val: uint8) =
   n.mode = (val and 0x80) == 0x80
-  n.timerPeriod = noiseTable[val and 0x0F]
+  n.timerPeriod = noiseTable[uint64(val and 0x0F)]
 
 proc `length=`(n: var Noise, val: uint8) =
   n.lengthValue = lengthTable[val shr 3]
@@ -128,7 +128,7 @@ proc `length=`(n: var Noise, val: uint8) =
 proc `control=`(d: var DMC, val: uint8) =
   d.irq = val.bit(7)
   d.loop = val.bit(6)
-  d.tickPeriod = dmcTable[val and 0x0F]
+  d.tickPeriod = dmcTable[uint64(val and 0x0F)]
 
 proc restart*(d: var DMC) =
   d.currentAddress = d.sampleAddress
