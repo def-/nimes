@@ -16,8 +16,8 @@ proc initPalette: array[0x40'u8, Color] =
     0xE4E594, 0xCFEF96, 0xBDF4AB, 0xB3F3CC, 0xB5EBF2, 0xB8B8B8, 0x000000, 0x000000]
 
   for i, x in result.mpairs:
-    x = (r: uint8(cs[i] shr 16), g: uint8(cs[i] shr 8 and 0xFF),
-         b: uint8(cs[i] and 0xFF), a: 255'u8)
+    x = (r: uint8(cs[(int)i] shr 16), g: uint8(cs[(int)i] shr 8 and 0xFF),
+         b: uint8(cs[(int)i] and 0xFF), a: 255'u8)
 
 const palette* = initPalette()
 
