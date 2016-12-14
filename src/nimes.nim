@@ -3,8 +3,6 @@ import
   os, times, algorithm,
   sdl2, sdl2.audio, sdl2.joystick
 
-const saveSize = 600
-
 when defined(emscripten):
   proc emscripten_set_main_loop(fun: proc() {.cdecl.}, fps,
     simulate_infinite_loop: cint) {.header: "<emscripten.h>".}

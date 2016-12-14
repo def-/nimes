@@ -86,7 +86,7 @@ proc fetchAttributeTableByte(ppu: var PPU) =
     shift = uint8(((ppu.v shr 4) and 4) or (ppu.v and 2))
   ppu.attributeTable = uint8((ppu.mem[adr] shr shift) and 3) shl 2
 
-template tileAdr: expr {.dirty.} =
+template tileAdr: untyped {.dirty.} =
   ppu.flagBackgroundTable.uint16*0x1000 + ppu.nameTable.uint16*16 +
     ((ppu.v shr 12) and 7)
 

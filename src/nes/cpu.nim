@@ -12,7 +12,7 @@ type
     indexedIndirect, indirect, indirectIndexed, relative, zeroPage, zeroPageX,
     zeroPageY
 
-template mem: expr{.immediate, dirty.} = cpu.mem
+template mem: untyped {.dirty.} = cpu.mem
 
 proc push(cpu: var CPU, val: uint8) =
   mem[cpu.sp.uint16 or 0x100] = val
@@ -81,11 +81,11 @@ proc compare(cpu: var CPU, a, b: uint8) =
   cpu.setZN(a - b)
   cpu.c = a >= b
 
-template op(name, code: expr): stmt {.dirty.} =
+template op(name, code: untyped): untyped {.dirty.} =
   proc name(cpu: var CPU, info = StepInfo()) =
     code
 
-template op(name, zn, code: expr): stmt {.dirty.} =
+template op(name, zn, code: untyped): untyped {.dirty.} =
   proc name(cpu: var CPU, info = StepInfo()) =
     code
     cpu.setZN(zn)

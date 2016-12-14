@@ -24,7 +24,7 @@ proc mirrorAddress(mode: uint8, adr: uint16): uint16 =
 
   result = mirrorLookup[mode][table]*0x0400 + 0x2000 + offset
 
-template paletteAdr(adr): expr =
+template paletteAdr(adr): untyped =
   if (adr >= 16'u16) and ((adr mod 4) == 0): adr - 16 else: adr
 
 proc readPalette*(ppu: PPU, adr: uint16): uint8 =
