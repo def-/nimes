@@ -126,7 +126,7 @@ op beq: # Branch if equal
   if cpu.z:
     cpu.branch(info)
 
-op bit: # Bit test
+op btt: # Bit test
   let val = mem[info.address]
   cpu.v = ((val shr 6) and 1) != 0
   cpu.setZ(val and cpu.a)
@@ -173,7 +173,7 @@ op cpx: # Compare x register
 op cpy: # Compare y register
   cpu.compare(cpu.y, mem[info.address])
 
-op dec, val: # Decrement memory
+op dcc, val: # Decrement memory
   let val = mem[info.address] - 1
   mem[info.address] = val
 
@@ -186,7 +186,7 @@ op dey, cpu.y: # Decrement y register
 op eor, cpu.a: # Exclusive or
   cpu.a = cpu.a xor mem[info.address]
 
-op inc, val: # Increment memory
+op icc, val: # Increment memory
   let val = mem[info.address] + 1
   mem[info.address] = val
 
@@ -351,7 +351,7 @@ let
   instructions: array[uint8, proc] = [ # All 6502 instructions
    brk, ora, kil, slo, nop, ora, asl, slo, php, ora, asl, anc, nop, ora, asl, slo,
    bpl, ora, kil, slo, nop, ora, asl, slo, clc, ora, nop, slo, nop, ora, asl, slo,
-   jsr, und, kil, rla, bit, und, rol, rla, plp, und, rol, anc, bit, und, rol, rla,
+   jsr, und, kil, rla, btt, und, rol, rla, plp, und, rol, anc, btt, und, rol, rla,
    bmi, und, kil, rla, nop, und, rol, rla, sec, und, nop, rla, nop, und, rol, rla,
    rti, eor, kil, sre, nop, eor, lsr, sre, pha, eor, lsr, alr, jmp, eor, lsr, sre,
    bvc, eor, kil, sre, nop, eor, lsr, sre, cli, eor, nop, sre, nop, eor, lsr, sre,
@@ -361,10 +361,10 @@ let
    bcc, sta, kil, ahx, sty, sta, stx, sax, tya, sta, txs, tas, shy, sta, shx, ahx,
    ldy, lda, ldx, lax, ldy, lda, ldx, lax, tay, lda, tax, lax, ldy, lda, ldx, lax,
    bcs, lda, kil, lax, ldy, lda, ldx, lax, clv, lda, tsx, las, ldy, lda, ldx, lax,
-   cpy, cmp, nop, dcp, cpy, cmp, dec, dcp, iny, cmp, dex, axs, cpy, cmp, dec, dcp,
-   bne, cmp, kil, dcp, nop, cmp, dec, dcp, cld, cmp, nop, dcp, nop, cmp, dec, dcp,
-   cpx, sbc, nop, isc, cpx, sbc, inc, isc, inx, sbc, nop, sbc, cpx, sbc, inc, isc,
-   beq, sbc, kil, isc, nop, sbc, inc, isc, sed, sbc, nop, isc, nop, sbc, inc, isc,
+   cpy, cmp, nop, dcp, cpy, cmp, dcc, dcp, iny, cmp, dex, axs, cpy, cmp, dcc, dcp,
+   bne, cmp, kil, dcp, nop, cmp, dcc, dcp, cld, cmp, nop, dcp, nop, cmp, dcc, dcp,
+   cpx, sbc, nop, isc, cpx, sbc, icc, isc, inx, sbc, nop, sbc, cpx, sbc, icc, isc,
+   beq, sbc, kil, isc, nop, sbc, icc, isc, sed, sbc, nop, isc, nop, sbc, icc, isc,
   ]
 const
   instructionModes: array[uint8, uint8] = [ # Addressing modes
