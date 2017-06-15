@@ -19,8 +19,8 @@ proc mirrorAddress(mode: uint8, adr: uint16): uint16 =
 
   let
     adr = (adr - 0x2000) mod 0x1000
-    table = adr div 0x0400
-    offset = adr mod 0x0400
+    table = uint8(adr div 0x0400)
+    offset = adr mod 0x0400'u16
 
   result = mirrorLookup[mode][table]*0x0400 + 0x2000 + offset
 
@@ -40,9 +40,9 @@ proc `[]`*(mem: PPUMemory, adr: uint16): uint8 =
     result = mem.nes.mapper[adr]
   of 0x2000..0x3EFF:
     let mode = mem.nes.cartridge.mirror
-    result = mem.nes.ppu.nameTableData[mirrorAddress(mode, adr) mod 2048]
+    result = mem.nes.ppu.nameTableData[int(mirrorAddress(mode, adr) mod 2048)]
   of 0x3F00..0x3FFF:
-    result = mem.nes.ppu.readPalette(adr mod 32)
+    result = mem.nes.ppu.readPalette(adr mod 32'u16)
   else: discard
 
 proc `[]=`*(mem: PPUMemory, adr: uint16, val: uint8) =
@@ -52,9 +52,9 @@ proc `[]=`*(mem: PPUMemory, adr: uint16, val: uint8) =
     mem.nes.mapper[adr] = val
   of 0x2000..0x3EFF:
     let mode = mem.nes.cartridge.mirror
-    mem.nes.ppu.nameTableData[mirrorAddress(mode, adr) mod 2048] = val
+    mem.nes.ppu.nameTableData[int(mirrorAddress(mode, adr) mod 2048)] = val
   of 0x3F00..0x3FFF:
-    mem.nes.ppu.writePalette(adr mod 32, val)
+    mem.nes.ppu.writePalette(uint8(adr) mod 32, val)
   else: discard
 
 const
