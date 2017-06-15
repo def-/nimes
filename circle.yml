@@ -2,8 +2,8 @@ dependencies:
   pre:
     - |
         if [ ! -x ~/nim/bin/nim ]; then
-          git clone -b devel --depth 1 git://github.com/araq/nim ~/nim/
-          git clone -b devel --depth 1 git://github.com/nim-lang/csources ~/nim/csources/
+          git clone -b devel --depth 1 git://github.com/nim-lang/nim ~/nim/
+          git clone --depth 1 git://github.com/nim-lang/csources ~/nim/csources/
           cd ~/nim/csources; sh build.sh; cd ..; rm -rf csources
           bin/nim c koch; ./koch boot -d:release
           ln -fs ~/nim/bin/nim ~/bin/nim
