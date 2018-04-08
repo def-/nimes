@@ -155,7 +155,7 @@ type
 
   Cartridge* = ref object
     prg*, chr*: seq[uint8]
-    sram*: array[0x2000'u16, uint8]
+    sram*: array[0x2000, uint8]
     mapper*, mirror*: uint8
     battery*: bool
 

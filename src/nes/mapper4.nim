@@ -4,9 +4,9 @@ type Mapper4* = ref object of Mapper
   cartridge: Cartridge
   nes: NES
   register, prgMode, chrMode, reload, counter: uint8
-  registers: array[0'u8..7'u8, uint8]
-  prgOffsets: array[0'u8..3'u8, int]
-  chrOffsets: array[0'u8..7'u8, int]
+  registers: array[0..7, uint8]
+  prgOffsets: array[0..3, int]
+  chrOffsets: array[0..7, int]
   irqEnable: bool
 
 proc prgBankOffset(m: Mapper4, index: int): int =
@@ -64,9 +64,10 @@ proc writeBankSelect(m: Mapper4, val: uint8) =
   m.register = val and 7
 
 proc writeMirror(m: Mapper4, val: uint8) =
-  m.cartridge.mirror = uint8(case val and 1
-  of 0: mirrorVertical
-  of 1: mirrorHorizontal)
+  case val and 1
+  of 0: m.cartridge.mirror = mirrorVertical.uint8
+  of 1: m.cartridge.mirror = mirrorHorizontal.uint8
+  else: discard
 
 proc writeRegister(m: Mapper4, adr: uint16, val: uint8) =
   case adr

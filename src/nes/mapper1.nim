@@ -3,7 +3,7 @@ import types
 type Mapper1* = ref object of Mapper
   cartridge: Cartridge
   shiftRegister, control, prgMode, chrMode, prgBank, chrBank0, chrBank1: uint8
-  prgOffsets, chrOffsets: array[0'u8..1'u8, int]
+  prgOffsets, chrOffsets: array[0..1, int]
 
 proc prgBankOffset(m: Mapper1, index: int): int =
   var index = if index >= 0x80: index - 0x100 else: index
@@ -24,11 +24,12 @@ proc writeControl(m: Mapper1, val: uint8) =
   m.chrMode = (val shr 4) and 1
   m.prgMode = (val shr 2) and 3
 
-  m.cartridge.mirror = uint8(case val and 3
-  of 0: mirrorSingle0
-  of 1: mirrorSingle1
-  of 2: mirrorVertical
-  of 3: mirrorHorizontal)
+  case val and 3
+  of 0: m.cartridge.mirror = mirrorSingle0.uint8
+  of 1: m.cartridge.mirror = mirrorSingle1.uint8
+  of 2: m.cartridge.mirror = mirrorVertical.uint8
+  of 3: m.cartridge.mirror = mirrorHorizontal.uint8
+  else: discard
 
 proc updateOffsets(m: Mapper1) =
   case m.prgMode
