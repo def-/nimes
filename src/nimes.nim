@@ -1,7 +1,7 @@
 import
   rewinder, nes,
   os, times, algorithm,
-  sdl2, sdl2.audio, sdl2.joystick
+  sdl2, sdl2/audio, sdl2/joystick
 
 when defined(emscripten):
   proc emscripten_set_main_loop(fun: proc() {.cdecl.}, fps,
@@ -78,7 +78,7 @@ else:
     title = "NimES"
 
 if not sdl2.init(inits):
-  raise newException(SystemError, "SDL2 initialization failed")
+  raise newException(CatchableError, "SDL2 initialization failed")
 
 discard setHint("SDL_RENDER_SCALE_QUALITY", "0")
 

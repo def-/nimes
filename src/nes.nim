@@ -1,5 +1,5 @@
-import nes.types, nes.cpu, nes.apu, nes.ppu, nes.cartridge, nes.controller,
-  nes.mapper, nes.mem
+import nes/types, nes/cpu, nes/apu, nes/ppu, nes/cartridge, nes/controller,
+  nes/mapper, nes/mem
 
 export types.NES, types.NESObj, types.Buttons, setButtons, resolution
 

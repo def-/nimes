@@ -121,7 +121,7 @@ proc spritePixel(ppu: var PPU): (uint8, uint8) =
   if not ppu.flagShowSprites:
     return
 
-  for i in 0 .. <ppu.spriteCount:
+  for i in 0 ..< ppu.spriteCount:
     var offset = ppu.cycle - 1 - ppu.spritePositions[i].int
     if offset notin 0..7:
       continue
@@ -215,7 +215,7 @@ proc evaluateSprites(ppu: var PPU) =
     let x = ppu.oamData[i*4+3]
     let row = ppu.scanLine - y.int
 
-    if row notin 0 .. <h:
+    if row notin 0 ..< h:
       continue
 
     if count < 8:
