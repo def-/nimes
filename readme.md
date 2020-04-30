@@ -103,5 +103,5 @@ The NES emulation code largely follows fogleman's excellent [NES emulator in
 Go](https://github.com/fogleman/nes) as well as these info materials and some
 other emulators:
 
-- http://www.obelisk.demon.co.uk/6502/
+- https://web.archive.org/web/20150909055529/http://www.obelisk.demon.co.uk/6502/
 - http://nesdev.com/
