@@ -73,11 +73,16 @@ proc loadRegister(m: Mapper1, adr: uint16, val: uint8) =
       m.writeRegister(adr, m.shiftRegister)
       m.shiftRegister = 0x10
 
-proc step*(m: Mapper) =
+proc newMapper1*(cartridge: Cartridge): Mapper1 =
+  new result
+  result.cartridge = cartridge
+  result.shiftRegister = 0x10
+  result.prgOffsets[1] = result.prgBankOffset(-1)
+
+method step*(m: Mapper1) =
   discard
 
-proc idx*(m: Mapper, adr: uint16): uint8 =
-  var m = Mapper1(m)
+method `[]`*(m: Mapper1, adr: uint16): uint8 =
   case adr
   of 0x0000..0x1FFF:
     let bank = adr div 0x1000
@@ -91,8 +96,7 @@ proc idx*(m: Mapper, adr: uint16): uint8 =
     result = m.cartridge.prg[m.prgOffsets[bank]+offset.int]
   else: raise newException(ValueError, "unhandled mapper1 read at: " & $adr)
 
-proc idxSet*(m: Mapper, adr: uint16, val: uint8) =
-  var m = Mapper1(m)
+method `[]=`*(m: Mapper1, adr: uint16, val: uint8) =
   case adr
   of 0x0000..0x1FFF:
     let bank = adr div 0x1000
@@ -101,12 +105,3 @@ proc idxSet*(m: Mapper, adr: uint16, val: uint8) =
   of 0x6000..0x7FFF: m.cartridge.sram[adr.int - 0x6000] = val
   of 0x8000..0xFFFF: m.loadRegister(adr, val)
   else: raise newException(ValueError, "unhandled mapper1 write at: " & $adr)
-
-proc newMapper1*(cartridge: Cartridge): Mapper1 =
-  new result
-  result.cartridge = cartridge
-  result.shiftRegister = 0x10
-  result.prgOffsets[1] = result.prgBankOffset(-1)
-  result.idx = idx
-  result.idxSet = idxSet
-  result.step = step

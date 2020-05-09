@@ -11,24 +11,6 @@ type
     absolute, absoluteX, absoluteY, accumulator, immediate, implied,
     indexedIndirect, indirect, indirectIndexed, relative, zeroPage, zeroPageX,
     zeroPageY
-  
-  Opcode = enum
-    brk, ora, kil, slo, nop, asl, php, anc,
-    bpl, clc,
-    jsr, und, rla, btt,rol, plp,
-    bmi, sec,
-    rti, eor, sre, lsr, pha, alr, jmp
-    bvc, cli,
-    rts, adc, rra, ror, pla, arr,
-    bvs, sei,
-    sta, sax, sty, stx, dey, txa, xaa,
-    bcc, ahx,tya, txs, tas, shy, shx,
-    ldy, lda, ldx, lax, tay, tax,
-    bcs, clv, tsx, las,
-    cpy, cmp, dcp, dcc, iny, dex, axs,
-    bne, cld,
-    cpx, sbc, isc, icc, inx,
-    beq, sed
 
 template mem: untyped {.dirty.} = cpu.mem
 
@@ -78,7 +60,7 @@ proc `flags=`(cpu: var CPU, flags: uint8) =
   cpu.n = flags.bit(7)
 
 proc reset*(cpu: var CPU) =
-  cpu.pc = cpu.mem.read16(0xFFFC'u16)
+  cpu.pc = mem.read16(0xFFFC)
   cpu.sp = 0xFD
   cpu.flags = 0x24
 
@@ -99,50 +81,18 @@ proc compare(cpu: var CPU, a, b: uint8) =
   cpu.setZN(a - b)
   cpu.c = a >= b
 
-import tables, macros
-var data {.compiletime.}: Table[string, NimNode]
+template op(name, code: untyped): untyped {.dirty.} =
+  proc name(cpu: var CPU, info = StepInfo()) =
+    code
 
-macro op(code: varargs[untyped]): untyped =
-  assert code.len < 4, "Expect 3 arguments at most"
-  let info = ident"info"
-  let cpu = ident"cpu"
-  # The opcode itself
-  let name = code[0]
-  # We have two args
-  var toAdd = if code[1].kind != nnkStmtList:
-    let body = code[2]
-    let zn = code[1]
-    quote do:
-      `body`
-      `cpu`.setZN(`zn`)
-  # One argument
-  else:
-    let body = code[1]
-    quote do:
-      `body`
-    
-  data[$name] = toAdd
-
-macro genOpcodeCase(val: untyped): untyped =
-  var d = genSym(nskLet, "myval")
-  result = newTree(nnkCaseStmt, d)
-  for key, val in data:
-    result.add newTree(nnkOfBranch, ident(key), val)
-  result = quote do:
-    let `d` = `val`
-    `result`
-  #result = newTree(nnkStmtList, newTree(nnkPragma, ident"computedGoto"), result)
-  #echo repr result
-
-macro getOpcodeIn(val: untyped): untyped = 
-  result = data[$val]
-
-template getOpcode(val: untyped): untyped {.dirty.} = 
-  getOpcodeIn(val)
+template op(name, zn, code: untyped): untyped {.dirty.} =
+  proc name(cpu: var CPU, info = StepInfo()) =
+    code
+    cpu.setZN(zn)
 
 op adc, cpu.a: # Add with carry
   let a = cpu.a
-  let b = cpu.mem[info.address]
+  let b = mem[info.address]
   let c = cpu.c.uint8
 
   cpu.a = a + b + c
@@ -150,7 +100,7 @@ op adc, cpu.a: # Add with carry
   cpu.v = ((a xor b) and 0x80) == 0 and ((a xor cpu.a) and 0x80) != 0
 
 op und, cpu.a: # Logical and
-  cpu.a = cpu.a and cpu.mem[info.address]
+  cpu.a = cpu.a and mem[info.address]
 
 op asl: # Arithmetic shift left
   if info.mode == accumulator:
@@ -158,10 +108,10 @@ op asl: # Arithmetic shift left
     cpu.a = cpu.a shl 1
     cpu.setZN(cpu.a)
   else:
-    var val = cpu.mem[info.address]
+    var val = mem[info.address]
     cpu.c = ((val shr 7) and 1) != 0
     val = val shl 1
-    cpu.mem[info.address] = val
+    mem[info.address] = val
     cpu.setZN(val)
 
 op bcc: # Branch if carry clear
@@ -215,17 +165,17 @@ op clv: # Clear overflow flag
   cpu.v = false
 
 op cmp: # Compare
-  cpu.compare(cpu.a, cpu.mem[info.address])
+  cpu.compare(cpu.a, mem[info.address])
 
 op cpx: # Compare x register
-  cpu.compare(cpu.x, cpu.mem[info.address])
+  cpu.compare(cpu.x, mem[info.address])
 
 op cpy: # Compare y register
-  cpu.compare(cpu.y, cpu.mem[info.address])
+  cpu.compare(cpu.y, mem[info.address])
 
 op dcc, val: # Decrement memory
-  let val = cpu.mem[info.address] - 1
-  cpu.mem[info.address] = val
+  let val = mem[info.address] - 1
+  mem[info.address] = val
 
 op dex, cpu.x: # Decrement x register
   dec cpu.x
@@ -234,11 +184,11 @@ op dey, cpu.y: # Decrement y register
   dec cpu.y
 
 op eor, cpu.a: # Exclusive or
-  cpu.a = cpu.a xor cpu.mem[info.address]
+  cpu.a = cpu.a xor mem[info.address]
 
 op icc, val: # Increment memory
-  let val = cpu.mem[info.address] + 1
-  cpu.mem[info.address] = val
+  let val = mem[info.address] + 1
+  mem[info.address] = val
 
 op inx, cpu.x: # Increment x register
   inc cpu.x
@@ -254,13 +204,13 @@ op jsr: # Jump to subroutine
   cpu.pc = info.address
 
 op lda, cpu.a: # Load accumulator
-  cpu.a = cpu.mem[info.address]
+  cpu.a = mem[info.address]
 
 op ldx, cpu.x: # Load x register
-  cpu.x = cpu.mem[info.address]
+  cpu.x = mem[info.address]
 
 op ldy, cpu.y: # Load y register
-  cpu.y = cpu.mem[info.address]
+  cpu.y = mem[info.address]
 
 op lsr: # Logical shift right
   if info.mode == accumulator:
@@ -268,17 +218,17 @@ op lsr: # Logical shift right
     cpu.a = cpu.a shr 1
     cpu.setZN(cpu.a)
   else:
-    var val = cpu.mem[info.address]
+    var val = mem[info.address]
     cpu.c = (val and 1) != 0
     val = val shr 1
-    cpu.mem[info.address] = val
+    mem[info.address] = val
     cpu.setZN(val)
 
 op nop: # No operation
   discard
 
 op ora, cpu.a: # Logical inclusive or
-  cpu.a = cpu.a or cpu.mem[info.address]
+  cpu.a = cpu.a or mem[info.address]
 
 op pha: # Push accumulator
   cpu.push(cpu.a)
@@ -299,10 +249,10 @@ op rol: # Rotate left
     cpu.a = (cpu.a shl 1) or c
     cpu.setZN(cpu.a)
   else:
-    var val = cpu.mem[info.address]
+    var val = mem[info.address]
     cpu.c = ((val shr 7) and 1) != 0
     val = (val shl 1) or c
-    cpu.mem[info.address] = val
+    mem[info.address] = val
     cpu.setZN(val)
 
 op ror: # Rotate right
@@ -312,10 +262,10 @@ op ror: # Rotate right
     cpu.a = (cpu.a shr 1) or (c shl 7)
     cpu.setZN(cpu.a)
   else:
-    var val = cpu.mem[info.address]
+    var val = mem[info.address]
     cpu.c = (val and 1) != 0
     val = (val shr 1) or (c shl 7)
-    cpu.mem[info.address] = val
+    mem[info.address] = val
     cpu.setZN(val)
 
 op rti: # Return from interrupt
@@ -327,7 +277,7 @@ op rts: # Return from subrouting
 
 op sbc, cpu.a: # Subtract with carry
   let a = cpu.a
-  let b = cpu.mem[info.address]
+  let b = mem[info.address]
   let c = cpu.c.uint8
 
   cpu.a = a - b - (1'u8 - c)
@@ -344,13 +294,13 @@ op sei: # Set interrupt disable
   cpu.i = true
 
 op sta: # Store accumulator
-  cpu.mem[info.address] = cpu.a
+  mem[info.address] = cpu.a
 
 op stx: # Store x register
-  cpu.mem[info.address] = cpu.x
+  mem[info.address] = cpu.x
 
 op sty: # Store y register
-  cpu.mem[info.address] = cpu.y
+  mem[info.address] = cpu.y
 
 op tax, cpu.x: # Transfer accumulator to x
   cpu.x = cpu.a
@@ -372,11 +322,9 @@ op tya, cpu.a: # Transfer y to accumulator
 
 op brk: # Force interrupt
   cpu.push16(cpu.pc)
-  getOpcode(php)
-  getOpcode(sei)
-  #cpu.php(info)
-  #cpu.sei(info)
-  cpu.pc = cpu.mem.read16(0xFFFE)
+  cpu.php(info)
+  cpu.sei(info)
+  cpu.pc = mem.read16(0xFFFE)
 
 # Illegal opcodes
 op ahx: discard
@@ -400,7 +348,7 @@ op tas: discard
 op xaa: discard
 
 let
-  instructions: array[uint8, Opcode] = [ # All 6502 instructions
+  instructions: array[uint8, proc] = [ # All 6502 instructions
    brk, ora, kil, slo, nop, ora, asl, slo, php, ora, asl, anc, nop, ora, asl, slo,
    bpl, ora, kil, slo, nop, ora, asl, slo, clc, ora, nop, slo, nop, ora, asl, slo,
    jsr, und, kil, rla, btt, und, rol, rla, plp, und, rol, anc, btt, und, rol, rla,
@@ -495,20 +443,17 @@ const
      1,   1,   0,   0,   0,   0,   0,   0,   0,   1,   0,   0,   1,   1,   0,   0,
   ]
 
-
 proc nmi(cpu: var CPU) = # Non-maskable interrupt
   cpu.push16(cpu.pc)
-  #getOpcode(php)
-  cpu.push(cpu.flags or 0x10)
-  cpu.pc = cpu.mem.read16(0xFFFA)
+  cpu.php()
+  cpu.pc = mem.read16(0xFFFA)
   cpu.i = true
   cpu.cycles += 7
 
 proc irq(cpu: var CPU) = # IRQ interrupt
   cpu.push16(cpu.pc)
-  #getOpcode(php)
-  cpu.push(cpu.flags or 0x10)
-  cpu.pc = cpu.mem.read16(0xFFFE)
+  cpu.php()
+  cpu.pc = mem.read16(0xFFFE)
   cpu.i = true
   cpu.cycles += 7
 
@@ -530,22 +475,22 @@ proc step*(cpu: var CPU): int =
   let mode = instructionModes[opcode].AddressingMode
 
   let adr = case mode
-  of absolute:        cpu.mem.read16(cpu.pc+1)
-  of absoluteX:       cpu.mem.read16(cpu.pc+1) + cpu.x
-  of absoluteY:       cpu.mem.read16(cpu.pc+1) + cpu.y
+  of absolute:        mem.read16(cpu.pc+1)
+  of absoluteX:       mem.read16(cpu.pc+1) + cpu.x
+  of absoluteY:       mem.read16(cpu.pc+1) + cpu.y
 
-  of indexedIndirect: cpu.mem.read16bug(cpu.mem[cpu.pc+1] + cpu.x)
-  of indirect:        cpu.mem.read16bug(cpu.mem.read16(cpu.pc+1))
-  of indirectIndexed: cpu.mem.read16bug(cpu.mem[cpu.pc+1]) + cpu.y
+  of indexedIndirect: mem.read16bug(mem[cpu.pc+1] + cpu.x)
+  of indirect:        mem.read16bug(mem.read16(cpu.pc+1))
+  of indirectIndexed: mem.read16bug(mem[cpu.pc+1]) + cpu.y
 
-  of zeroPage:        cpu.mem[cpu.pc+1]
-  of zeroPageX:       cpu.mem[cpu.pc+1] + cpu.x
-  of zeroPageY:       cpu.mem[cpu.pc+1] + cpu.y
+  of zeroPage:        mem[cpu.pc+1]
+  of zeroPageX:       mem[cpu.pc+1] + cpu.x
+  of zeroPageY:       mem[cpu.pc+1] + cpu.y
 
   of immediate:       cpu.pc + 1
   of accumulator, implied: 0
   of relative:
-    let offset = cpu.mem[cpu.pc+1].uint16
+    let offset = mem[cpu.pc+1].uint16
     if offset < 0x80:
       cpu.pc + 2 + offset
     else:
@@ -559,7 +504,6 @@ proc step*(cpu: var CPU): int =
   cpu.cycles += instructionCycles[opcode]
 
   let info = StepInfo(address: adr, pc: cpu.pc, mode: mode)
-  # call the opcode
-  genOpcodeCase(instructions[opcode])
+  instructions[opcode](cpu, info)
 
   result = int(cpu.cycles - cycles)

@@ -4,7 +4,7 @@ export types.Cartridge
 
 const iNESMagic = 0x1A53454E
 
-type iNESHeader {.packed.} = object 
+type iNESHeader = object {.packed.}
   magic: uint32
   numPRG, numCHR, control1, control2, numRAM: uint8
   padding: array[7, uint8]
