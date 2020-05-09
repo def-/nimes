@@ -1,7 +1,6 @@
 import types, mapper1, mapper2, mapper3, mapper4, mapper7
 
 proc newMapper*(nes: NES): Mapper =
-  echo "Using mapper ", nes.cartridge.mapper
   result = case nes.cartridge.mapper
   of 0, 2: newMapper2(nes.cartridge)
   of 1: newMapper1(nes.cartridge)
