@@ -1,4 +1,4 @@
-import types, mem
+import types, mem, mapper
 
 export types.PPU
 

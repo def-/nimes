@@ -1,5 +1,5 @@
 import nes/types, nes/cpu, nes/apu, nes/ppu, nes/cartridge, nes/controller,
-  nes/mapper, nes/mem
+  nes/mapper
 
 export types.NES, types.NESObj, types.Buttons, setButtons, resolution
 
@@ -24,7 +24,7 @@ proc step*(nes: NES): int =
 
   for i in 1 .. result*3:
     nes.ppu.step()
-    nes.mapper.step()
+    nes.mapper.step(nes.mapper)
 
   when not defined(emscripten):
     for i in 1 .. result:

@@ -85,16 +85,8 @@ proc writeRegister(m: Mapper4, adr: uint16, val: uint8) =
     if adr mod 2 == 0: m.irqEnable = false
     else:              m.irqEnable = true
 
-proc newMapper4*(cartridge: Cartridge, nes: NES): Mapper4 =
-  new result
-  result.cartridge = cartridge
-  result.nes = nes
-  result.prgOffsets[0] = result.prgBankOffset(0)
-  result.prgOffsets[1] = result.prgBankOffset(1)
-  result.prgOffsets[2] = result.prgBankOffset(-2)
-  result.prgOffsets[3] = result.prgBankOffset(-1)
-
-method step*(m: Mapper4) =
+proc step*(m: Mapper) =
+  var m = Mapper4(m)
   let ppu = m.nes.ppu
 
   if ppu.cycle != 300:
@@ -111,7 +103,8 @@ method step*(m: Mapper4) =
     if m.counter == 0 and m.irqEnable:
       m.nes.cpu.triggerIRQ()
 
-method `[]`*(m: Mapper4, adr: uint16): uint8 =
+proc idx*(m: Mapper, adr: uint16): uint8 =
+  var m = Mapper4(m)
   case adr
   of 0x0000..0x1FFF:
     let bank = adr div 0x0400
@@ -125,7 +118,8 @@ method `[]`*(m: Mapper4, adr: uint16): uint8 =
     result = m.cartridge.prg[m.prgOffsets[bank]+offset.int]
   else: raise newException(ValueError, "unhandled mapper4 read at: " & $adr)
 
-method `[]=`*(m: Mapper4, adr: uint16, val: uint8) =
+proc idxSet*(m: Mapper, adr: uint16, val: uint8) =
+  var m = Mapper4(m)
   case adr
   of 0x0000..0x1FFF:
     let bank = adr div 0x0400
@@ -134,3 +128,15 @@ method `[]=`*(m: Mapper4, adr: uint16, val: uint8) =
   of 0x6000..0x7FFF: m.cartridge.sram[adr.int - 0x6000] = val
   of 0x8000..0xFFFF: m.writeRegister(adr, val)
   else: raise newException(ValueError, "unhandled mapper4 write at: " & $adr)
+
+proc newMapper4*(cartridge: Cartridge, nes: NES): Mapper4 =
+  new result
+  result.cartridge = cartridge
+  result.nes = nes
+  result.prgOffsets[0] = result.prgBankOffset(0)
+  result.prgOffsets[1] = result.prgBankOffset(1)
+  result.prgOffsets[2] = result.prgBankOffset(-2)
+  result.prgOffsets[3] = result.prgBankOffset(-1)
+  result.idx = idx
+  result.idxSet = idxSet
+  result.step = step
