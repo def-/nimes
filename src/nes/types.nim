@@ -166,6 +166,9 @@ type
   Buttons* = array[8, bool]
 
   Mapper* = ref object of RootObj
+    step*: proc(m: Mapper)
+    idx*: proc(m: Mapper, adr: uint16): uint8
+    idxSet*: proc(m: Mapper, adr: uint16, val: uint8)
 
   MirrorModes* = enum
     mirrorHorizontal = 0, mirrorVertical, mirrorSingle0, mirrorSingle1, mirrorFour
@@ -183,7 +186,3 @@ proc triggerNMI*(cpu: var CPU) =
 proc triggerIRQ*(cpu: var CPU) =
   if not cpu.i:
     cpu.interrupt = iIRQ
-
-method step*(m: Mapper) {.base.} = discard
-method `[]`*(m: Mapper, adr: uint16): uint8 {.base.} = discard
-method `[]=`*(m: Mapper, adr: uint16, val: uint8) {.base.} = discard
