@@ -1,8 +1,8 @@
 import types
 
 type Mapper2* = ref object of Mapper
-  cartridge*: Cartridge
-  prgBanks*, prgBank1*, prgBank2*: int
+  cartridge: Cartridge
+  prgBanks, prgBank1, prgBank2: int
 
 proc step(m: Mapper) =
   discard
