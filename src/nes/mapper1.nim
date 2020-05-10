@@ -73,10 +73,10 @@ proc loadRegister(m: Mapper1, adr: uint16, val: uint8) =
       m.writeRegister(adr, m.shiftRegister)
       m.shiftRegister = 0x10
 
-proc step*(m: Mapper) =
+proc step(m: Mapper) =
   discard
 
-proc idx*(m: Mapper, adr: uint16): uint8 =
+proc idx(m: Mapper, adr: uint16): uint8 =
   var m = Mapper1(m)
   case adr
   of 0x0000..0x1FFF:
@@ -91,7 +91,7 @@ proc idx*(m: Mapper, adr: uint16): uint8 =
     result = m.cartridge.prg[m.prgOffsets[bank]+offset.int]
   else: raise newException(ValueError, "unhandled mapper1 read at: " & $adr)
 
-proc idxSet*(m: Mapper, adr: uint16, val: uint8) =
+proc idxSet(m: Mapper, adr: uint16, val: uint8) =
   var m = Mapper1(m)
   case adr
   of 0x0000..0x1FFF:

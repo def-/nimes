@@ -4,10 +4,10 @@ type Mapper3* = ref object of Mapper
   cartridge: Cartridge
   chrBank, prgBank1, prgBank2: int
 
-proc step*(m: Mapper) =
+proc step(m: Mapper) =
   discard
 
-proc idx*(m: Mapper, adr: uint16): uint8 =
+proc idx(m: Mapper, adr: uint16): uint8 =
   var m = Mapper3(m)
   case adr
   of 0x0000..0x1FFF: result = m.cartridge.chr[adr.int]
@@ -16,7 +16,7 @@ proc idx*(m: Mapper, adr: uint16): uint8 =
   of 0xC000..0xFFFF: result = m.cartridge.prg[m.prgBank2*0x4000 + int(adr - 0xC000)]
   else: raise newException(ValueError, "unhandled mapper3 read at: " & $adr)
 
-proc idxSet*(m: Mapper, adr: uint16, val: uint8) =
+proc idxSet(m: Mapper, adr: uint16, val: uint8) =
   var m = Mapper3(m)
   case adr
   of 0x0000..0x1FFF: m.cartridge.chr[m.chrBank*0x2000 + adr.int] = val

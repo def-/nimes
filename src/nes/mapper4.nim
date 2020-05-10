@@ -85,7 +85,7 @@ proc writeRegister(m: Mapper4, adr: uint16, val: uint8) =
     if adr mod 2 == 0: m.irqEnable = false
     else:              m.irqEnable = true
 
-proc step*(m: Mapper) =
+proc step(m: Mapper) =
   var m = Mapper4(m)
   let ppu = m.nes.ppu
 
@@ -103,7 +103,7 @@ proc step*(m: Mapper) =
     if m.counter == 0 and m.irqEnable:
       m.nes.cpu.triggerIRQ()
 
-proc idx*(m: Mapper, adr: uint16): uint8 =
+proc idx(m: Mapper, adr: uint16): uint8 =
   var m = Mapper4(m)
   case adr
   of 0x0000..0x1FFF:
@@ -118,7 +118,7 @@ proc idx*(m: Mapper, adr: uint16): uint8 =
     result = m.cartridge.prg[m.prgOffsets[bank]+offset.int]
   else: raise newException(ValueError, "unhandled mapper4 read at: " & $adr)
 
-proc idxSet*(m: Mapper, adr: uint16, val: uint8) =
+proc idxSet(m: Mapper, adr: uint16, val: uint8) =
   var m = Mapper4(m)
   case adr
   of 0x0000..0x1FFF:
